@@ -1,0 +1,87 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# 상수 정의
+G = 6.67430e-11 # 중력 상수
+M = 1.989e30 # 태양의 질량
+m1 = 5.972e24 # 지구의 질량
+m2 = 7.342e22 # 달의 질량
+AU = 149.6e9 # 1 AU의 길이
+d = 384400000 # 지구에서 달까지의 거리
+year = 365*24*60*60 # 1년의 길이
+month = 27.3*24*60*60 # 한 달의 길이
+
+
+# 초기 조건
+x1, y1 = -AU, 0 # 지구의 초기 위치
+vx1, vy1 = 0, -29783 # 지구의 초기 속도
+x2, y2 = -AU-d, 0 # 달의 초기 위치
+vx2, vy2 = 0, -29783-1022 # 달의 초기 속도
+
+
+# 궤도 계산
+def orbit():
+    # 지구와 달의 위치와 속도
+    global x1, y1, vx1, vy1, x2, y2, vx2, vy2
+    # 지구와 달의 가속도 초기화
+    ax1, ay1, ax2, ay2 = 0, 0, 0, 0
+
+    # 지구와 태양의 중력 계산
+    r1 = np.sqrt(x1**2 + y1**2)
+    F1 = G*M*m1/r1**2
+    ax1 = -F1*x1/r1/m1
+    ay1 = -F1*y1/r1/m1
+
+    # 달과 지구의 중력 계산
+    r2 = np.sqrt((x2-x1)**2 + y2**2)
+    F2 = G*m1*m2/r2**2
+    ax2 = -F2*(x2-x1)/r2/m2
+    ay2 = -F2*y2/r2/m2
+    ax1 += F2*(x2-x1)/r2/m1
+    ay1 += F2*y2/r2/m1
+
+    # 지구와 달의 위치와 속도 갱신
+    x1 += vx1*dt
+    y1 += vy1*dt
+    vx1 += ax1*dt
+    vy1 += ay1*dt
+    x2 += vx2*dt
+    y2 += vy2*dt
+    vx2 += ax2*dt
+    vy2 += ay2*dt
+
+    return (x1, y1, x2, y2)
+
+
+# 애니메이션 생성
+fig = plt.figure()
+ax = plt.axes(xlim=(-AU-d-1e9, AU+1e9), ylim=(-AU-1e9, AU+1e9))
+line1, = ax.plot([], [], 'bo', markersize=10) # 지구
+line2, = ax.plot([], [], 'ro', markersize=5) # 달
+
+
+# 애니메이션 업데이트 함수
+def update(frame):
+    # 궤도 계산
+    x1, y1, x2, y2 = orbit()
+    # 궤도를 애니메이션으로 그림
+    line1.set_data([x1], [y1])
+    line2.set_data([x2], [y2])
+    return line1, line2,
+
+
+# 애니메이션 초기화 함수
+def init():
+    line1.set_data([], [])
+    line2.set_data([], [])
+    return line1, line2,
+
+
+# 애니메이션 실행
+dt = 86400 # 하루의 길이
+frames = int(year/dt) # 애니메이션 프레임 수
+anim = animation.FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, repeat=False)
+plt.show()
+
+
